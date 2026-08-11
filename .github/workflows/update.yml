@@ -1,0 +1,33 @@
+name: Update Russia playlist
+
+on:
+  schedule:
+    # Запуск раз в сутки, в 03:00 UTC (06:00 по Киеву / Москве)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # позволяет запустить вручную из вкладки Actions
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download latest ru files from iptv-org
+        run: |
+          mkdir -p streams
+          FILES="ru.m3u ru_15plusmg.m3u ru_bonustv.m3u ru_catcast.m3u ru_mylifeisgood.m3u ru_ntv.m3u ru_rt.m3u ru_smotrim.m3u ru_televizor24.m3u ru_tvbricks.m3u ru_tvteleport.m3u ru_zabava.m3u"
+          for f in $FILES; do
+            curl -sSL "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/$f" -o "streams/$f"
+          done
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add streams/
+          git diff --staged --quiet || git commit -m "Auto-update: ru files from iptv-org/iptv"
+          git push
